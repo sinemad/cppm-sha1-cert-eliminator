@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SHA-1 Certificate Eliminator</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    body { background: #f4f6f9; }
+
+    .navbar { background: linear-gradient(135deg, #b91c1c, #dc2626); }
+
+    .card { border: none; border-radius: 10px; }
+    .card-header { border-radius: 10px 10px 0 0 !important; border-bottom: 1px solid #e9ecef; }
+
+    .cert-row { cursor: pointer; transition: background .1s; }
+    .cert-row:hover { background-color: #fff8f8; }
+    .cert-row.selected { background-color: #fff1f1; }
+
+    #scan-spinner { display: none; }
+
+    .badge-meta   { background-color: #6366f1; }
+    .badge-parse  { background-color: #0891b2; }
+    .badge-unknown { background-color: #9ca3af; }
+
+    .expiry-expired { color: #dc2626; font-weight: 600; }
+    .expiry-soon    { color: #d97706; font-weight: 600; }
+
+    .detail-table td:first-child {
+      width: 180px;
+      font-weight: 500;
+      color: #6c757d;
+      white-space: nowrap;
+      vertical-align: top;
+    }
+
+    #no-sha1-alert { border-left: 4px solid #16a34a; }
+    #sha1-warning  { border-left: 4px solid #dc2626; }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark py-3">
+  <div class="container">
+    <span class="navbar-brand fw-bold fs-5">
+      <i class="bi bi-shield-exclamation me-2"></i>SHA-1 Certificate Eliminator
+    </span>
+    <div id="connection-badge" class="d-none">
+      <span class="badge rounded-pill bg-light text-dark px-3 py-2">
+        <span class="me-1" style="color:#22c55e">&#9679;</span>
+        <span id="badge-server" class="fw-semibold"></span>
+      </span>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4" style="max-width: 1100px">
+
+  <!-- Toast -->
+  <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999">
+    <div id="toast" class="toast align-items-center border-0 shadow" role="alert">
+      <div class="d-flex">
+        <div id="toast-body" class="toast-body fw-semibold"></div>
+        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Connection Card -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+      <span class="fw-semibold text-secondary">
+        <i class="bi bi-plug-fill me-2"></i>ClearPass Connection
+      </span>
+      <button class="btn btn-sm btn-link text-secondary text-decoration-none p-0"
+              type="button" data-bs-toggle="collapse" data-bs-target="#connection-collapse">
+        <i class="bi bi-chevron-down" id="collapse-icon"></i>
+      </button>
+    </div>
+    <div class="collapse show" id="connection-collapse">
+      <div class="card-body py-4">
+        <form id="config-form">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-semibold small text-uppercase text-secondary ls-1">Server URL</label>
+              <input type="url" class="form-control" id="server"
+                     placeholder="https://clearpass.example.com/api" required>
+              <div class="form-text">Include the <code>/api</code> path suffix.</div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold small text-uppercase text-secondary">Authentication</label>
+              <div class="d-flex gap-4 mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="auth-type"
+                         id="auth-token" value="token" checked>
+                  <label class="form-check-label" for="auth-token">API Token</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="auth-type"
+                         id="auth-creds" value="credentials">
+                  <label class="form-check-label" for="auth-creds">Client Credentials</label>
+                </div>
+              </div>
+
+              <div id="token-fields">
+                <input type="password" class="form-control" id="api-token"
+                       placeholder="API Token" autocomplete="off">
+              </div>
+              <div id="creds-fields" class="d-none row g-2">
+                <div class="col-md-6">
+                  <input type="text" class="form-control" id="client-id"
+                         placeholder="Client ID" autocomplete="off">
+                </div>
+                <div class="col-md-6">
+                  <input type="password" class="form-control" id="client-secret"
+                         placeholder="Client Secret" autocomplete="off">
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="verify-ssl" checked>
+                <label class="form-check-label" for="verify-ssl">Verify SSL Certificate</label>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <button type="submit" class="btn btn-primary px-4" id="connect-btn">
+                <i class="bi bi-plug me-1"></i>Connect
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scan Card -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body d-flex align-items-center gap-3 py-3">
+      <button id="scan-btn" class="btn btn-warning fw-semibold px-4" disabled>
+        <i class="bi bi-search me-1"></i>Scan for SHA-1 Certificates
+      </button>
+      <div id="scan-spinner" class="spinner-border spinner-border-sm text-secondary" role="status">
+        <span class="visually-hidden">Scanning…</span>
+      </div>
+      <span id="scan-status" class="text-muted small"></span>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results-section" class="d-none">
+
+    <!-- No SHA-1 found -->
+    <div id="no-sha1-alert" class="alert alert-success shadow-sm d-none">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      <span id="no-sha1-msg">No SHA-1 certificates found in the trust list.</span>
+    </div>
+
+    <!-- SHA-1 table -->
+    <div id="sha1-table-section" class="d-none">
+      <div id="sha1-warning" class="alert alert-danger shadow-sm mb-3">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        Found <strong id="sha1-count">0</strong> SHA-1 certificate(s) in the trust list.
+        SHA-1 is cryptographically weak — select the entries to remove below.
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+          <div class="d-flex align-items-center gap-2">
+            <div class="form-check mb-0">
+              <input class="form-check-input" type="checkbox" id="select-all-cb">
+              <label class="form-check-label fw-semibold" for="select-all-cb">
+                Select all
+              </label>
+            </div>
+            <span class="text-muted small" id="selection-label"></span>
+          </div>
+          <button id="delete-btn" class="btn btn-danger btn-sm px-3" disabled>
+            <i class="bi bi-trash3 me-1"></i>Delete Selected
+            (<span id="selected-count">0</span>)
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light text-secondary small text-uppercase">
+                <tr>
+                  <th style="width:42px"></th>
+                  <th>Subject</th>
+                  <th>Issuer</th>
+                  <th style="width:130px">Expires</th>
+                  <th style="width:130px">Usage</th>
+                  <th style="width:110px">Detection</th>
+                  <th style="width:80px"></th>
+                </tr>
+              </thead>
+              <tbody id="certs-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="delete-modal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-semibold">
+          <i class="bi bi-trash3 me-2"></i>Confirm Deletion
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-3">
+          The following certificates will be <strong>permanently removed</strong>
+          from the ClearPass trust list:
+        </p>
+        <ul id="delete-list" class="list-group list-group-flush rounded border"></ul>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger px-4" id="confirm-delete-btn">
+          <i class="bi bi-trash3 me-1"></i>Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Certificate Detail Modal -->
+<div class="modal fade" id="detail-modal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header">
+        <h5 class="modal-title fw-semibold">
+          <i class="bi bi-file-earmark-text me-2 text-danger"></i>Certificate Details
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="detail-body"></div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

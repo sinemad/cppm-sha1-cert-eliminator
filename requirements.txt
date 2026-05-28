@@ -1,0 +1,5 @@
+pyclearpass==1.0.8
+cryptography>=41.0.0
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.9

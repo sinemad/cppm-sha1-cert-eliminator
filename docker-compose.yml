@@ -1,0 +1,15 @@
+services:
+  sha1-cert-eliminator:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    # Web UI (default):
+    #   docker compose up
+    #   Open http://localhost:8080
+    #
+    # CLI (override CMD):
+    #   docker compose run --rm sha1-cert-eliminator python sha1_cert_eliminator.py --dry-run
+    #   docker compose run --rm sha1-cert-eliminator python sha1_cert_eliminator.py --auto-remove
+    #   docker compose run --rm sha1-cert-eliminator python sha1_cert_eliminator.py --json
