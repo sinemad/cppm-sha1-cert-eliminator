@@ -8,44 +8,93 @@ SHA-1 is cryptographically broken and rejected by modern browsers and OS trust s
 
 ## Quick Start
 
-### 1. Configure credentials
+### Prerequisites
 
-Copy `.env.example` to `.env` and fill in your ClearPass details:
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed
+- A ClearPass API token or OAuth2 client credentials (see [Authentication](#authentication))
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/your-org/cppm-sha1-cert-eliminator.git
+cd cppm-sha1-cert-eliminator
+```
+
+### 2. Configure credentials
+
+Copy the example environment file and fill in your ClearPass details:
 
 ```bash
 cp .env.example .env
 ```
 
+Open `.env` in your editor and set the required values:
+
 ```env
+# Full URL to the ClearPass API — must include /api
 CLEARPASS_SERVER=https://clearpass.example.com/api
+
+# Authentication — use an API token OR client credentials (not both)
 CLEARPASS_API_TOKEN=your-token-here
+
+# CLEARPASS_CLIENT_ID=your-client-id
+# CLEARPASS_CLIENT_SECRET=your-client-secret
+
+# Set to false only if your ClearPass uses a self-signed certificate
 CLEARPASS_VERIFY_SSL=true
 ```
 
-See [Authentication](#authentication) for `client_id`/`client_secret` as an alternative to an API token.
+See [Authentication](#authentication) for how to obtain credentials.
 
-### 2. Run the web UI
+### 3. Build the Docker image
+
+```bash
+docker compose build
+```
+
+This installs all Python dependencies into the image. Only needed once (or after pulling updates).
+
+### 4. Run the web UI
 
 ```bash
 docker compose up
 ```
 
-Open [http://localhost:8080](http://localhost:8080) in your browser.
+Docker Compose reads your `.env` file automatically. Once the container starts, open [http://localhost:8080](http://localhost:8080) in your browser. If credentials were set in `.env`, the app connects to ClearPass automatically on startup.
 
-### 3. Or run the CLI
+To run in the background:
 
 ```bash
-# Dry run — list SHA-1 certs without deleting
+docker compose up -d
+docker compose logs -f   # tail logs
+docker compose down      # stop and remove the container
+```
+
+### 5. Or run the CLI
+
+The CLI runs as a one-shot container and exits when done. Your `.env` credentials are passed through automatically.
+
+```bash
+# Dry run — list SHA-1 certs without deleting anything
 docker compose run --rm sha1-cert-eliminator python sha1_cert_eliminator.py --dry-run
 
-# Interactive selection
+# Interactive — lists found certs, prompts you to select which to delete
 docker compose run --rm sha1-cert-eliminator python sha1_cert_eliminator.py
 
 # Delete all SHA-1 certs without prompting
 docker compose run --rm sha1-cert-eliminator python sha1_cert_eliminator.py --auto-remove
 
-# Output results as JSON
+# Output results as JSON (useful for scripting or auditing)
 docker compose run --rm sha1-cert-eliminator python sha1_cert_eliminator.py --json
+```
+
+You can also pass credentials directly as flags instead of using `.env`:
+
+```bash
+docker compose run --rm sha1-cert-eliminator python sha1_cert_eliminator.py \
+  --server https://clearpass.example.com/api \
+  --api-token your-token-here \
+  --dry-run
 ```
 
 ---
