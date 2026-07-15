@@ -101,7 +101,7 @@ docker compose run --rm sha1-cert-eliminator python sha1_cert_eliminator.py \
 
 ## Authentication
 
-Two methods are supported. Use whichever your ClearPass instance provides.
+Two methods are supported. Choose one based on what your ClearPass deployment provides.
 
 | Method | Environment Variables | CLI Flags |
 |---|---|---|
@@ -109,6 +109,52 @@ Two methods are supported. Use whichever your ClearPass instance provides.
 | OAuth2 Client Credentials | `CLEARPASS_CLIENT_ID` + `CLEARPASS_CLIENT_SECRET` | `--client-id` + `--client-secret` |
 
 The server URL must include the `/api` path suffix, e.g. `https://clearpass.example.com/api`.
+
+---
+
+### Option A — API Token
+
+An API token is the simpler option and is recommended for one-off or admin use.
+
+1. Log in to the ClearPass Policy Manager web UI as an administrator.
+2. From the Dashboard, navigate to **ClearPass Guest**.
+3. In the ClearPass Guest Administration UI, go to **Administration → API Services → API Clients**.
+4. Click **Create API Client**.
+5. Set **Operator Profile** to a profile with at minimum read access to the certificate trust list (e.g. the built-in `Super Administrator` or a custom profile with `Platform → Certificates` read/write permissions).
+6. Under **Grant Type**, select **Client Credentials** and click **Create API Client**.
+7. On the next screen, copy the **Access Token** that is displayed. This value is your `CLEARPASS_API_TOKEN`. It does not expire by default but can be revoked from the same page.
+
+> **Note:** The Access Token shown on the creation screen is only displayed once. Copy it before navigating away.
+
+---
+
+### Option B — OAuth2 Client Credentials
+
+Client credentials are preferred for automated or long-running use because they allow ClearPass to issue fresh tokens without manual intervention.
+
+1. Log in to the ClearPass Policy Manager web UI as an administrator.
+2. From the Dashboard, navigate to **ClearPass Guest**.
+3. In the ClearPass Guest Administration UI, go to **Administration → API Services → API Clients**.
+4. Click **Create API Client**.
+5. Give the client a descriptive name (e.g. `sha1-cert-eliminator`).
+6. Set **Operator Profile** to a profile with `Platform → Certificates` read/write permissions.
+7. Under **Grant Type**, select **Client Credentials**.
+8. Click **Create API Client**.
+9. Copy the **Client ID** and **Client Secret** displayed on the confirmation screen. These are your `CLEARPASS_CLIENT_ID` and `CLEARPASS_CLIENT_SECRET`.
+
+> **Note:** The Client Secret is only shown once at creation time. If lost, you must create a new API client.
+
+---
+
+### Required Permissions
+
+Whichever method you use, the associated operator profile needs:
+
+| Permission | Level Required |
+|---|---|
+| Platform → Certificates | Read (to scan) + Write (to delete) |
+
+If you only intend to audit (dry-run or `--json`), read-only access is sufficient.
 
 ---
 
