@@ -70,6 +70,30 @@ docker compose logs -f   # tail logs
 docker compose down      # stop and remove the container
 ```
 
+#### Changing the web UI port
+
+By default, the web UI runs on port 8080. To use a different port, edit the `docker-compose.yml` file:
+
+```yaml
+services:
+  sha1-cert-eliminator:
+    ports:
+      - "9000:8080"  # Change the first number to your desired port (e.g., 9000:8080)
+```
+
+In this example, the web UI will be accessible at `http://localhost:9000`.
+
+- **First number** (before the colon): the port on your machine that you access in your browser
+- **Second number** (after the colon): the internal container port — leave this as 8080
+
+Then run:
+
+```bash
+docker compose up
+```
+
+The web UI will now be available at the new port.
+
 ### 5. Or run the CLI
 
 The CLI runs as a one-shot container and exits when done. Your `.env` credentials are passed through automatically.
