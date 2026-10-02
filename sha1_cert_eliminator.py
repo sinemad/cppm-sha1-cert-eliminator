@@ -66,7 +66,7 @@ def cli_remove(login, cert_id, dry_run: bool = False) -> bool:
         return False
 
 
-def run(login, dry_run: bool, auto_remove: bool, output_json: bool) -> None:
+def run(login, dry_run: bool, auto_remove: bool, output_json: bool, check_weak_keys: bool = False) -> None:
     print("Fetching certificate trust list from ClearPass...")
     all_entries = fetch_all_trust_list(login)
     print(f"Found {len(all_entries)} total trust list entries.")
@@ -75,11 +75,12 @@ def run(login, dry_run: bool, auto_remove: bool, output_json: bool) -> None:
         print("No entries to examine.")
         return
 
-    print("Checking for SHA-1 signed certificates...")
-    sha1_certs = identify_sha1_certs(login, all_entries)
+    label = "SHA-1 signed certificates" if not check_weak_keys else "SHA-1 signed certificates and other weak certificates"
+    print(f"Checking for {label}...")
+    sha1_certs = identify_sha1_certs(login, all_entries, check_weak_keys=check_weak_keys)
 
     if not sha1_certs:
-        print("No SHA-1 certificates found in the trust list.")
+        print("No weak certificates found in the trust list.")
         return
 
     print(f"\nFound {len(sha1_certs)} SHA-1 certificate(s):\n")
@@ -157,6 +158,8 @@ def main():
     parser.add_argument("--auto-remove", action="store_true", help="Remove all SHA-1 certs without prompting")
     parser.add_argument("--json", dest="output_json", action="store_true",
                         help="Output SHA-1 cert list as JSON (implies --dry-run)")
+    parser.add_argument("--check-weak-keys", action="store_true",
+                        help="Also flag certificates with RSA/DSA keys under 2048 bits")
     args = parser.parse_args()
 
     if args.output_json:
@@ -168,7 +171,8 @@ def main():
     except ValueError as exc:
         sys.exit(f"Error: {exc}")
 
-    run(login, dry_run=args.dry_run, auto_remove=args.auto_remove, output_json=args.output_json)
+    run(login, dry_run=args.dry_run, auto_remove=args.auto_remove, output_json=args.output_json,
+        check_weak_keys=args.check_weak_keys)
 
 
 if __name__ == "__main__":

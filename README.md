@@ -110,6 +110,9 @@ docker compose run --rm sha1-cert-eliminator python sha1_cert_eliminator.py --au
 
 # Output results as JSON (useful for scripting or auditing)
 docker compose run --rm sha1-cert-eliminator python sha1_cert_eliminator.py --json
+
+# Also flag certs with RSA/DSA keys under 2048 bits
+docker compose run --rm sha1-cert-eliminator python sha1_cert_eliminator.py --dry-run --check-weak-keys
 ```
 
 You can also pass credentials directly as flags instead of using `.env`:
@@ -201,7 +204,7 @@ The web UI starts automatically with `docker compose up` and is accessible at `h
 **Workflow:**
 
 1. **Connect** — Enter your ClearPass server URL and credentials. The app validates the connection immediately and pre-populates fields from environment variables if set.
-2. **Scan** — Click "Scan for SHA-1 Certificates" to fetch the full trust list and identify SHA-1 signed entries.
+2. **Scan** — Click "Scan for SHA-1 Certificates" to fetch the full trust list and identify SHA-1 signed entries. Check "Also flag other weak certificates" first to also flag certs with RSA/DSA keys under 2048 bits.
 3. **Review** — Certificates are shown in a table with subject, issuer, expiry, usage, and how they were detected. Click any row to see full certificate details.
 4. **Delete** — Select one or more certificates and click "Delete Selected". A confirmation modal lists what will be removed before any action is taken.
 
@@ -225,6 +228,7 @@ python sha1_cert_eliminator.py [OPTIONS]
 | `--dry-run` | List SHA-1 certs but do not delete |
 | `--auto-remove` | Delete all SHA-1 certs without prompting |
 | `--json` | Print SHA-1 cert list as JSON (implies `--dry-run`) |
+| `--check-weak-keys` | Also flag certificates with RSA/DSA keys under 2048 bits |
 
 CLI flags take precedence over environment variables.
 
@@ -240,6 +244,8 @@ Each trust list entry is checked in two passes:
 2. **Certificate parsing** — If metadata fields are absent or inconclusive, the tool fetches the full certificate (PEM or DER) and parses it with the Python `cryptography` library to inspect the actual signature hash algorithm.
 
 This two-pass approach handles ClearPass deployments that return incomplete metadata in the list endpoint.
+
+**Optional weak-key check** — enabling `--check-weak-keys` (CLI) or the "Also flag other weak certificates" checkbox (web UI) additionally inspects each parsed certificate's public key and flags RSA/DSA keys under 2048 bits (and undersized EC curves). This is off by default, since it's a separate concern from SHA-1 signatures and expands the scan beyond the tool's original scope.
 
 ---
 

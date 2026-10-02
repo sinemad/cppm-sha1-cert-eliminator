@@ -20,6 +20,8 @@ SHA1_ALGORITHM_STRINGS = (
     "id-dsa-with-sha1",
 )
 
+MIN_KEY_SIZE_BITS = 2048
+
 
 @dataclass
 class ClearPassConfig:
@@ -86,6 +88,16 @@ def cert_metadata(cert: x509.Certificate) -> dict:
     }
 
 
+def key_size_bits(cert: x509.Certificate) -> Optional[int]:
+    """Return the public key size in bits (RSA/DSA key_size, or EC curve key_size)."""
+    public_key = cert.public_key()
+    key_size = getattr(public_key, "key_size", None)
+    if key_size is not None:
+        return key_size
+    curve = getattr(public_key, "curve", None)
+    return getattr(curve, "key_size", None)
+
+
 def fetch_all_trust_list(login: ClearPassAPILogin) -> list[dict]:
     all_entries: list[dict] = []
     offset = 0
@@ -112,12 +124,14 @@ def fetch_all_trust_list(login: ClearPassAPILogin) -> list[dict]:
     return all_entries
 
 
-def identify_sha1_certs(login: ClearPassAPILogin, entries: list[dict]) -> list[dict]:
+def identify_sha1_certs(
+    login: ClearPassAPILogin, entries: list[dict], check_weak_keys: bool = False
+) -> list[dict]:
     sha1_entries = []
 
     for entry in entries:
         cert_id = entry.get("id")
-        detected_by = "metadata" if is_sha1_by_fields(entry) else None
+        reasons = ["metadata"] if is_sha1_by_fields(entry) else []
 
         pem_field = entry.get("cert_file") or entry.get("pem") or entry.get("certificate")
         if not pem_field and cert_id:
@@ -138,13 +152,18 @@ def identify_sha1_certs(login: ClearPassAPILogin, entries: list[dict]) -> list[d
         cert = load_x509_cert(pem_field) if pem_field else None
         if cert is not None:
             entry = {**entry, **cert_metadata(cert)}
-            if detected_by is None:
+            if not reasons:
                 sig_hash = cert.signature_hash_algorithm
                 if sig_hash is not None and isinstance(sig_hash, hashes.SHA1):
-                    detected_by = "cert parsing"
+                    reasons.append("cert parsing")
 
-        if detected_by:
-            sha1_entries.append({**entry, "_detected_by": detected_by})
+            if check_weak_keys:
+                bits = key_size_bits(cert)
+                if bits is not None and bits < MIN_KEY_SIZE_BITS:
+                    reasons.append(f"weak key ({bits} bits)")
+
+        if reasons:
+            sha1_entries.append({**entry, "_detected_by": ", ".join(reasons)})
 
     return sha1_entries
 

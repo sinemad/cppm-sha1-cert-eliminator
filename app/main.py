@@ -110,14 +110,14 @@ async def save_config(req: ConfigRequest):
 
 
 @app.get("/api/scan")
-async def scan():
-    """Fetch the full trust list and return only SHA-1 signed entries."""
+async def scan(check_weak_keys: bool = False):
+    """Fetch the full trust list and return SHA-1 signed (and optionally weak-key) entries."""
     if not _login:
         raise HTTPException(400, "Not configured. POST /api/config first.")
 
     def _scan():
         entries = fetch_all_trust_list(_login)
-        sha1 = identify_sha1_certs(_login, entries)
+        sha1 = identify_sha1_certs(_login, entries, check_weak_keys=check_weak_keys)
         return len(entries), sha1
 
     try:
