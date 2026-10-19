@@ -15,15 +15,9 @@
     .cert-row:hover { background-color: #fff8f8; }
     .cert-row.selected { background-color: #fff1f1; }
     #scan-spinner { display: none; }
-<<<<<<< HEAD
     .badge-meta { background-color: #6366f1; }
     .badge-parse { background-color: #0891b2; }
-=======
-
-    .badge-meta   { background-color: #6366f1; }
-    .badge-parse  { background-color: #0891b2; }
     .badge-weak-key { background-color: #ea580c; }
->>>>>>> fade951 (Added the ability for users to find weak key certificates (1024 bits) and remove if wanted. The default is this option is disabled, the user has to actively enable the feature)
     .badge-unknown { background-color: #9ca3af; }
     .expiry-expired { color: #dc2626; font-weight: 600; }
     .expiry-soon { color: #d97706; font-weight: 600; }
@@ -60,9 +54,6 @@
       <div class="col-12"><button type="submit" class="btn btn-primary px-4" id="connect-btn"><i class="bi bi-plug me-1"></i>Connect</button></div>
     </div></form></div></div>
   </div>
-<<<<<<< HEAD
-  <div class="card shadow-sm mb-4"><div class="card-body d-flex align-items-center gap-3 py-3"><button id="scan-btn" class="btn btn-warning fw-semibold px-4" disabled><i class="bi bi-search me-1"></i>Scan for SHA-1 Certificates</button><div id="scan-spinner" class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Scanning…</span></div><span id="scan-status" class="text-muted small"></span></div></div>
-=======
 
   <!-- Scan Card -->
   <div class="card shadow-sm mb-4">
@@ -90,7 +81,6 @@
   </div>
 
   <!-- Results -->
->>>>>>> fade951 (Added the ability for users to find weak key certificates (1024 bits) and remove if wanted. The default is this option is disabled, the user has to actively enable the feature)
   <div id="results-section" class="d-none">
     <div id="no-sha1-alert" class="alert alert-success shadow-sm d-none"><i class="bi bi-check-circle-fill me-2"></i><span id="no-sha1-msg">No SHA-1 certificates found in the trust list.</span></div>
     <div id="sha1-table-section" class="d-none">

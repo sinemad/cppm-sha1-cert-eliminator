@@ -4,16 +4,6 @@ let certData = [];
 let activeStatus = 'enabled';
 const selectedIds = new Set();
 
-<<<<<<< HEAD
-const configForm = document.getElementById('config-form');
-const connectBtn = document.getElementById('connect-btn');
-const scanBtn = document.getElementById('scan-btn');
-const scanSpinner = document.getElementById('scan-spinner');
-const scanStatus = document.getElementById('scan-status');
-const resultsSection = document.getElementById('results-section');
-const noSha1Alert = document.getElementById('no-sha1-alert');
-const noSha1Msg = document.getElementById('no-sha1-msg');
-=======
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 
 const configForm      = document.getElementById('config-form');
@@ -25,7 +15,6 @@ const scanStatus      = document.getElementById('scan-status');
 const resultsSection  = document.getElementById('results-section');
 const noSha1Alert     = document.getElementById('no-sha1-alert');
 const noSha1Msg       = document.getElementById('no-sha1-msg');
->>>>>>> fade951 (Added the ability for users to find weak key certificates (1024 bits) and remove if wanted. The default is this option is disabled, the user has to actively enable the feature)
 const sha1TableSection = document.getElementById('sha1-table-section');
 const sha1Count = document.getElementById('sha1-count');
 const sha1EnabledCount = document.getElementById('sha1-enabled-count');
@@ -46,20 +35,13 @@ const toastBody = document.getElementById('toast-body');
 const collapseIcon = document.getElementById('collapse-icon');
 const confirmBtn = document.getElementById('confirm-delete-btn');
 
-<<<<<<< HEAD
-const bsToast = new bootstrap.Toast(toastEl, { delay: 4000 });
-const deleteModal = new bootstrap.Modal(document.getElementById('delete-modal'));
-const detailModal = new bootstrap.Modal(document.getElementById('detail-modal'));
-=======
 document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
 
-const bsToast       = new bootstrap.Toast(toastEl, { delay: 4000 });
-const deleteModal   = new bootstrap.Modal(document.getElementById('delete-modal'));
-const detailModal   = new bootstrap.Modal(document.getElementById('detail-modal'));
-const confirmBtn    = document.getElementById('confirm-delete-btn');
+const bsToast     = new bootstrap.Toast(toastEl, { delay: 4000 });
+const deleteModal = new bootstrap.Modal(document.getElementById('delete-modal'));
+const detailModal = new bootstrap.Modal(document.getElementById('detail-modal'));
 
 // ── Collapse chevron sync ─────────────────────────────────────────────────────
->>>>>>> fade951 (Added the ability for users to find weak key certificates (1024 bits) and remove if wanted. The default is this option is disabled, the user has to actively enable the feature)
 
 document.getElementById('connection-collapse').addEventListener('hide.bs.collapse', () => {
   collapseIcon.className = 'bi bi-chevron-up';
@@ -149,12 +131,8 @@ scanBtn.addEventListener('click', async () => {
   activeStatus = 'enabled';
   resultsSection.classList.add('d-none');
   try {
-<<<<<<< HEAD
-    const res = await fetch('/api/scan');
-=======
     const params = new URLSearchParams({ check_weak_keys: checkWeakKeysCb.checked });
-    const res  = await fetch(`/api/scan?${params}`);
->>>>>>> fade951 (Added the ability for users to find weak key certificates (1024 bits) and remove if wanted. The default is this option is disabled, the user has to actively enable the feature)
+    const res = await fetch(`/api/scan?${params}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Scan failed');
     scanStatus.textContent = `Checked ${data.total_certs} certificate(s) — found ${data.sha1_count} SHA-1 (${data.enabled_sha1_count} enabled, ${data.disabled_sha1_count} disabled)`;
