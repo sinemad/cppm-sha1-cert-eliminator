@@ -137,7 +137,7 @@ def identify_sha1_certs(
         if not pem_field and cert_id:
             try:
                 detail = ApiPlatformCertificates.get_cert_trust_list_by_cert_trust_list_id(
-                    login, cert_trust_list_id=cert_id
+                    login, cert_trust_list_id=str(cert_id)
                 )
                 if isinstance(detail, dict):
                     pem_field = (
@@ -171,7 +171,7 @@ def identify_sha1_certs(
 def remove_cert(login: ClearPassAPILogin, cert_id: Any) -> None:
     """Delete a trust list entry. Raises on failure."""
     ApiPlatformCertificates.delete_cert_trust_list_by_cert_trust_list_id(
-        login, cert_trust_list_id=cert_id
+        login, cert_trust_list_id=str(cert_id)
     )
 
 

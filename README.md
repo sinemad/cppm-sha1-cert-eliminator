@@ -16,7 +16,7 @@ SHA-1 is cryptographically broken and rejected by modern browsers and OS trust s
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-org/cppm-sha1-cert-eliminator.git
+git clone https://github.com/sinemad/cppm-sha1-cert-eliminator.git
 cd cppm-sha1-cert-eliminator
 ```
 
